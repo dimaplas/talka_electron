@@ -1,18 +1,18 @@
+const iohook = require('@tkomde/iohook');
 const { app, BrowserWindow, desktopCapturer, session, ipcMain } = require('electron');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
 const path = require('path');
 
 const v = new GlobalKeyboardListener();
 
-let mainWindow;
-let key;
-let setKey = false;
-let swith_micro = false;
-
-let server_name;
-
-// let DEBUG = false;
 let DEBUG = true;
+
+let key;
+let mainWindow;
+let server_name;
+let setKey = false;
+
+// DEBUG = false;
 
 if (DEBUG) {
   server_name = 'http://localhost/app/';
@@ -23,27 +23,29 @@ if (DEBUG) {
 }
 
 
+iohook.on('mousedown', e => keyListener(`m-${e.button}`, 'micro-down'));
+iohook.on('mouseup', e => keyListener(`m-${e.button}`, 'micro-up'));
+
+iohook.on('keydown', e => keyListener(`k-${e.keycode}`, 'micro-down'));
+iohook.on('keyup', e => keyListener(`k-${e.keycode}`, 'micro-up'));
+
+iohook.start();
+
 // Отправка данных в веб-страницу
 // mainWindow.webContents.send
 app.commandLine.appendSwitch('disable-http-cache');
 
-v.addListener(function (e) {
+function keyListener(lkey, sendKey) {
+  console.log(lkey, sendKey);
+
   if (setKey) {
     setKey = false;
-    key = e.scanCode;
+    key = lkey;
     mainWindow.webContents.send('new-micro-key', { 'key': key });
   }
 
-  if (key == e.scanCode) {
-    if (e.state == 'DOWN') {
-      swith_micro = true;
-      mainWindow.webContents.send('micro-down', '');
-    } else {
-      swith_micro = false;
-      mainWindow.webContents.send('micro-up', '');
-    }
-  }
-});
+  if (key == lkey) mainWindow.webContents.send(sendKey, '');
+};
 
 function createWindow() {
   mainWindow = new BrowserWindow({
