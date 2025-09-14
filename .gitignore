@@ -1,2 +1,4 @@
 /node_modules
 /release_builds
+/cert
+cert.pem

@@ -28,6 +28,7 @@
     "define-data-property": "^1.1.4",
     "define-properties": "^1.2.1",
     "detect-node": "^2.1.0",
+    "electron-updater": "^6.6.2",
     "end-of-stream": "^1.4.5",
     "env-paths": "^2.2.1",
     "es-define-property": "^1.0.1",
@@ -82,7 +83,28 @@
     "yauzl": "^2.10.0"
   },
   "build": {
-    "linux": {
+    "name": "talka_rf",
+    "version": "0.0.1",
+    "main": "main.js",
+    "build": {
+      "appId": "com.vizordino.talka_rf",
+      "productName": "Talka_RF",
+      "files": [
+        "dist/**/*",
+        "node_modules/**/*",
+        "package.json",
+        "main.js"
+      ],
+      "directories": {
+        "output": "release_builds"
+      },
+      "win": {
+        "target": "nsis",
+        "icon": "./icon.ico",
+        "certificateFile": "./cert.pem"
+      }
+    },
+    "_linux": {
       "target": "AppImage",
       "gtkVersion": "3"
     }
