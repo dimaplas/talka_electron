@@ -1,4 +1,5 @@
 /node_modules
 /release_builds
+/.node-persist
 /cert
 cert.pem

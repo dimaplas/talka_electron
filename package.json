@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@tkomde/iohook": "1.1.6",
-    "electron-updater": "^6.6.2"
+    "electron-updater": "^6.6.2",
+    "node-persist": "^4.0.4"
   },
   "repository": {
     "type": "git",

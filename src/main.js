@@ -1,6 +1,8 @@
 const { app, BrowserWindow, desktopCapturer, session, dialog, ipcMain } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
+const { gVal, sVal } = require('./utils.js');
+
 const path = require('path');
 const iohook = require('@tkomde/iohook');
 
@@ -13,11 +15,13 @@ let key;
 let server_name;
 let setKey = false;
 
-const isDev = process.defaultApp || process.mas || 
-process.env.NODE_ENV === 'development' || 
-process.env.ELECTRON_START_URL;
+async function initApp() {
+  key = await gVal('micro-key', null);  
+};
 
-DEBUG = false;
+const isDev = process.defaultApp || process.mas || process.env.NODE_ENV === 'development' || process.env.ELECTRON_START_URL;
+
+// DEBUG = false;
 
 process.env.ELECTRON_ENABLE_LOGGING = '1';
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = '1';
@@ -41,14 +45,13 @@ iohook.start();
 app.commandLine.appendSwitch('disable-http-cache');
 
 function keyListener(lkey, sendKey) {
-  // console.log(lkey, sendKey);
-
   if (setKey) {
     setKey = false;
     key = lkey;
+    sVal('micro-key', lkey);
     mainWindow.webContents.send('new-micro-key', { 'key': key });
   }
-
+  
   if (key == lkey) mainWindow.webContents.send(sendKey, '');
 };
 
@@ -148,7 +151,7 @@ function createWindow() {
             audio: 'loopback'
           });
         } else {
-          callback({ video: null }); // Отменяем, если источник не найден
+          callback(null); // Отменяем, если источник не найден
         }
         is_callbacked = true;        
         shareWindow.close();
@@ -157,12 +160,14 @@ function createWindow() {
       // Закрываем окно при потере фокуса
       shareWindow.webContents.on('blur', () => {
         shareWindow.close();
-        if (!is_callbacked) { callback({ video: null })}; // Отменяем выбор
+        if (!is_callbacked) callback(null); // Отменяем выбор
+        // if (!is_callbacked) { callback({ video: null })}; // Отменяем выбор
       });
-
+      
     } catch (error) {
       console.error('Ошибка получения источников:', error);
-      callback({ video: null }); // Отменяем при ошибке
+      if (!is_callbacked) callback(null); // Отменяем выбор
+      // callback({ video: null }); // Отменяем при ошибке
     }
   }, { useSystemPicker: true });
 
@@ -175,7 +180,7 @@ app.whenReady().then(() => {
   // Проверка режима разработки
   if (isDev) {
     console.log('Режим разработки активен');
-    // startApp();
+    startApp();
   } else {
     // Автообновление
     // Обработка событий обновления
@@ -222,6 +227,8 @@ app.whenReady().then(() => {
 
 function startApp() {
   loadingWindow.close();
+
+  initApp();
   createWindow();
 
   app.on('activate', () => {
@@ -239,5 +246,7 @@ function startApp() {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  } else {
+    console.log('all windows closed');
   }
 });
