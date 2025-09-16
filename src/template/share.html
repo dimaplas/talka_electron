@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор источника</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px 0;
+            margin: 0;
+            background-color: #fff;
+            color: #333;
+        }
+
+        #sourceList {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 20px auto;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #sourceImgs{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            width: 300px;
+            padding: 0 20px;
+            margin: 0;
+
+            border: 1px solid rgba(0, 0, 0, 0);
+        }
+
+        .video-container:hover {
+            border-color: black;
+            box-shadow: 0 0 15px black;
+        }
+
+        .caption {
+            white-space: nowrap; /* Запрет переноса на новую строку */
+            overflow: hidden;    /* Скрывает переполняющий контент */
+            text-overflow: ellipsis; /* Добавляем многоточие */
+
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            width: 300px;
+        }
+
+        video, img {
+            margin: 0 auto;
+
+            max-width: 300px;
+            height: 200px;
+            /* height: 180px; */
+        } 
+    </style>
+</head>
+
+<body>
+    <h2>Выберите источник экрана</h2>
+    <div id="sourceImgs"></div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const sourceImgs = document.getElementById('sourceImgs');
+
+        // Обработчик выбора источника
+        ipcRenderer.on('source-item', (event, source) => {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    mandatory: {
+                        chromeMediaSource: 'desktop',
+                        chromeMediaSourceId: source.id,
+                        maxFrameRate: 1,
+                        maxWidth: 320,    // максимальное разрешение по ширине
+                        maxHeight: 240    // максимальное разрешение по высоте
+                    }
+                },
+                audio: false
+            })
+            .then(stream => {
+                // Создаем элементы
+                const caption = document.createElement('p');
+                const container = document.createElement('div');
+                const video = document.createElement('video');
+                
+                // Настраиваем элементы
+                video.srcObject = stream;
+                video.play();
+
+                caption.classList.add('caption');
+                caption.textContent = source.name;
+
+                container.classList.add('video-container');
+                
+                // Добавляем в контейнер
+                container.appendChild(caption);
+                container.appendChild(video);
+                
+                // Добавляем обработчик клика
+                container.addEventListener('click', () => {
+                    console.log('container click => container');
+                    window.require('electron').ipcRenderer.send('source-selected', source.id);
+                    window.close();
+                });
+
+                sourceImgs.appendChild(container)
+            })
+            .catch(error => {
+                console.error('Ошибка получения медиа:', error);
+            });
+        });
+</script>
+</body>
+
+</html>

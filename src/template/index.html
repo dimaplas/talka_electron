@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Основное окно</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #video-container {
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container" class="hidden">
+        <video id="video-stream" autoplay playsinline></video>
+        <button id="stop-sharing">Остановить трансляцию</button>
+    </div>
+    
+    <button id="start-sharing">Начать демонстрацию экрана</button>
+    
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        // Получаем элементы DOM
+        const startButton = document.getElementById('start-sharing');
+        const stopButton = document.getElementById('stop-sharing');
+        const videoContainer = document.getElementById('video-container');
+        const videoElement = document.getElementById('video-stream');
+        
+        // Обработчик кнопки начала демонстрации
+        startButton.addEventListener('click', () => {
+            ipcRenderer.invoke('open-screen-share')
+                .then(response => {
+                    if (response.success) {
+                        console.log('Окно выбора открыто');
+                    } else {
+                        alert('Ошибка: ' + response.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+        });
+        
+        // Обработчик выбора источника
+        ipcRenderer.on('source-selected', (event, sourceId) => {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    mandatory: {
+                        chromeMediaSource: 'desktop',
+                        chromeMediaSourceId: sourceId
+                    }
+                }
+            })
+            .then(stream => {
+                videoElement.srcObject = stream;
+                videoContainer.classList.remove('hidden');
+                
+                // Показываем кнопку остановки
+                stopButton.style.display = 'block';
+                
+                // Сохраняем поток для последующего освобождения
+                window.stream = stream;
+            })
+            .catch(error => {
+                console.error('Ошибка получения медиа:', error);
+            });
+        });
+        
+        // Обработчик остановки трансляции
+        stopButton.addEventListener('click', () => {
+            if (window.stream) {
+                const tracks = window.stream.getTracks();
+                tracks.forEach(track => track.stop());
+                window.stream = null;
+                
+                videoElement.srcObject = null;
+                videoContainer.classList.add('hidden');
+                stopButton.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

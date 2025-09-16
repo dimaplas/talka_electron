@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка</title>
+    <style>
+        body {
+            display: flex;
+            flex-wrap: column;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+        .loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 1.86s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .text {
+            padding-top: 20px;
+            font-size: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <br>
+    <div class="text_upd" id="text_upd">Проверяем обновления...</div>
+    <script>
+        console.log('Open load form');
+
+        const { ipcRenderer } = require('electron')
+        const text_upd = document.getElementById('text_upd');
+
+        ipcRenderer.on('update-available', (event) => {
+            text_upd.innerHTML  = 'Найдено обновление,<br>подготовка к загрузке';
+        })
+
+        ipcRenderer.on('download-progress', (event, percent) => {
+            text_upd.textContent = `Загружено ${percent}%`;
+        })
+    </script>
+</head>
+</html>
